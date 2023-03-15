@@ -19,6 +19,37 @@
        regexp: swap
        state: absent
 
+   - name: Create a empty file for containerd module.
+     copy:
+       content: ""
+       dest: /etc/modules-load.d/containerd.conf
+       force: no
+
+   - name: Configure module for containerd.
+     blockinfile:
+       path: /etc/modules-load.d/containerd.conf 
+       block: |
+            overlay
+            br_netfilter
+
+   - name: Create a empty file for kubernetes sysctl params.
+     copy:
+       content: ""
+       dest: /etc/sysctl.d/99-kubernetes-cri.conf
+       force: no
+
+   - name: Configure sysctl params for Kubernetes.
+     lineinfile:
+       path: /etc/sysctl.d/99-kubernetes-cri.conf 
+       line: "{{ item }}"
+     with_items:
+       - 'net.bridge.bridge-nf-call-iptables  = 1'
+       - 'net.ipv4.ip_forward                 = 1'
+       - 'net.bridge.bridge-nf-call-ip6tables = 1'
+
+   - name: Apply sysctl params without reboot.
+     command: sysctl --system
+
    - name: Installing Prerequisites for Kubernetes
      apt: 
        name:
@@ -42,17 +73,38 @@
        state: present
        filename: docker
        mode: 0600
+  # 
+  #  - name: Install Docker Engine.
+  #    apt: 
+  #      name: docker-ce
+  #      state: present
+  #      update_cache: true
 
-   - name: Install Docker Engine.
+  #  - name: Enable service docker, and enable persistently
+  #    service: 
+  #      name: docker
+  #      enabled: yes
+
+   - name: Install containerd.
      apt: 
-       name: docker-ce
+       name:
+         - containerd.io
        state: present
-       update_cache: true
 
-   - name: Enable service docker, and enable persistently
-     service: 
-       name: docker
+   - name: Configure containerd.
+     file:
+       path: /etc/containerd
+       state: directory
+
+   - name: Configure containerd.
+     shell: /usr/bin/containerd config default > /etc/containerd/config.toml
+     
+   - name: Enable containerd service, and start it.
+     systemd: 
+       name: containerd
+       state: restarted
        enabled: yes
+       daemon-reload: yes
 
    - name: Add Google official GPG key
      apt_key:
