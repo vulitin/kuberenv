@@ -1,6 +1,6 @@
 ---
 - hosts: masters
-#  remote_user: ansible
+  remote_user: ansible
   become: yes
   become_method: sudo
   become_user: root
@@ -104,7 +104,8 @@
      copy:
        src: /tmp/kubernetes_join_command
        dest: /tmp/kubernetes_join_command
-       mode: 0777   
+       mode: 0777
+
    - name: Join the Worker nodes with master.
      become: yes
      become_method: sudo
@@ -113,6 +114,7 @@
      register: joined_or_not
    - debug:
        msg: "{{ joined_or_not.stdout }}"
+
 - hosts: masters
   remote_user: ansible
   become: yes

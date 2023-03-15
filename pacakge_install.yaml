@@ -87,8 +87,7 @@
 
    - name: Install containerd.
      apt: 
-       name:
-         - containerd.io
+       name: containerd.io
        state: present
 
    - name: Configure containerd.
